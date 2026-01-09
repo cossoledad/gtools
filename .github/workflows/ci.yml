@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-17 libgl1-mesa-dev xorg-dev
+
+      - name: Install Conan + Invoke
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install conan invoke
+
+      - name: Conan deps
+        run: invoke deps
+
+      - name: Build
+        run: invoke build

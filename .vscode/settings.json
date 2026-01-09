@@ -1,0 +1,8 @@
+{
+    "cmake.useCMakePresets": "always",
+    "cmake.configureOnOpen": false,
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "search.exclude": {
+        "**/*/build/": true,
+    }
+}

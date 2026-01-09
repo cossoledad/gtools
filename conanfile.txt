@@ -1,0 +1,14 @@
+[requires]
+imgui/1.92.5
+glfw/3.4
+nlohmann_json/3.11.3
+
+[generators]
+CMakeToolchain
+CMakeDeps
+
+[options]
+imgui/*:shared=True
+
+[layout]
+cmake_layout
