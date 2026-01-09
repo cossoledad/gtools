@@ -21,7 +21,12 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-17 libgl1-mesa-dev xorg-dev
+          sudo apt-get install -y clang-17 ninja-build libgl1-mesa-dev xorg-dev
+
+      - name: Install system deps (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install llvm ninja -y
 
       - name: Install Conan + Invoke
         run: |
@@ -31,5 +36,36 @@ jobs:
       - name: Conan deps
         run: invoke deps
 
-      - name: Build
-        run: invoke build
+      - name: Build (Windows Release)
+        if: runner.os == 'Windows'
+        run: invoke build --preset windows-release
+
+      - name: Build (Linux Release)
+        if: runner.os == 'Linux'
+        run: invoke build --preset linux-release
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item -Force build\\windows.vs18-release\\build\\Release\\conan_clang_demo.exe dist\\
+          Copy-Item -Recurse -Force build\\windows.vs18-release\\build\\Release\\plugins dist\\plugins
+          Get-ChildItem -Path build\\windows.vs18-release\\build\\Release -Filter *.dll | Copy-Item -Force -Destination dist\\
+          Compress-Archive -Path dist\\* -DestinationPath conan_clang_demo-windows.zip
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p dist
+          cp build/linux-release/build/Release/conan_clang_demo dist/
+          cp -r build/linux-release/build/Release/plugins dist/
+          cp -f build/linux-release/build/Release/*.so dist/ || true
+          tar -czf conan_clang_demo-linux.tar.gz -C dist .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conan-clang-demo-${{ matrix.os }}
+          path: |
+            conan_clang_demo-windows.zip
+            conan_clang_demo-linux.tar.gz
