@@ -8,7 +8,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -48,9 +48,14 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item -Force build\\windows.vs18-release\\build\\Release\\conan_clang_demo.exe dist\\
-          Copy-Item -Recurse -Force build\\windows.vs18-release\\build\\Release\\plugins dist\\plugins
-          Get-ChildItem -Path build\\windows.vs18-release\\build\\Release -Filter *.dll | Copy-Item -Force -Destination dist\\
+          $exe = Get-ChildItem -Path build -Recurse -Filter conan_clang_demo.exe | Select-Object -First 1
+          if (-not $exe) { throw "conan_clang_demo.exe not found under build" }
+          Copy-Item -Force $exe.FullName dist\\
+          $pluginDir = Join-Path $exe.DirectoryName "plugins"
+          if (Test-Path $pluginDir) {
+            Copy-Item -Recurse -Force $pluginDir dist\\plugins
+          }
+          Get-ChildItem -Path $exe.DirectoryName -Filter *.dll | Copy-Item -Force -Destination dist\\
           Compress-Archive -Path dist\\* -DestinationPath conan_clang_demo-windows.zip
 
       - name: Package (Linux)
