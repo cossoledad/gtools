@@ -4,7 +4,7 @@ from pathlib import Path
 import platform
 import shutil
 
-from invoke import task
+from invoke.tasks import task
 
 
 ROOT = Path(__file__).parent.resolve()
