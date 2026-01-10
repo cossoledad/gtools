@@ -21,13 +21,15 @@ def _default_profile() -> Path:
     raise RuntimeError(f"Unsupported system: {system}")
 
 
-def _conan_install(ctx, build_type: str, profile: Path) -> None:
+def _conan_install(ctx, build_type: str, profile: Path, conan_conf: str | None) -> None:
     build_dir = BUILD_DIR / f"{profile.stem}-{build_type.lower()}"
     build_dir.mkdir(parents=True, exist_ok=True)
+    conf_arg = f'-c "{conan_conf}" ' if conan_conf else ""
     ctx.run(
         (
             f'conan install . -of "{build_dir}" '
             f'-pr:h "{profile}" -pr:b "{profile}" '
+            f"{conf_arg}"
             f"-s build_type={build_type} --build=missing"
         ),
         echo=True,
@@ -35,11 +37,11 @@ def _conan_install(ctx, build_type: str, profile: Path) -> None:
 
 
 @task
-def deps(ctx, profile=None):
+def deps(ctx, profile=None, conan_conf=None):
     # 生成 debug/release 的 Conan 输出（含 toolchain）
     profile_path = Path(profile) if profile else _default_profile()
-    _conan_install(ctx, "Debug", profile_path)
-    _conan_install(ctx, "Release", profile_path)
+    _conan_install(ctx, "Debug", profile_path, conan_conf)
+    _conan_install(ctx, "Release", profile_path, conan_conf)
 
 @task
 def build(ctx, preset=None):

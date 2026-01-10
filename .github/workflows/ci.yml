@@ -34,7 +34,7 @@ jobs:
           python -m pip install conan invoke
 
       - name: Conan deps
-        run: invoke deps
+        run: invoke deps --conan-conf "tools.system.package_manager:mode=install"
 
       - name: Build (Windows Release)
         if: runner.os == 'Windows'
