@@ -1,18 +1,18 @@
-add_executable(conan_clang_demo
+add_executable(gtoolapp
     main.cpp
     ${PROJECT_SOURCE_DIR}/src/imgui/imgui_impl_glfw.cpp
     ${PROJECT_SOURCE_DIR}/src/imgui/imgui_impl_opengl2.cpp
     ${PROJECT_SOURCE_DIR}/src/core/plugin_loader.cpp
 )
 
-target_include_directories(conan_clang_demo
+target_include_directories(gtoolapp
     PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/src/core
         ${PROJECT_SOURCE_DIR}/src/imgui
 )
 
-target_link_libraries(conan_clang_demo
+target_link_libraries(gtoolapp
     PRIVATE
         imgui::imgui
         ${GLFW_TARGET}
@@ -20,10 +20,10 @@ target_link_libraries(conan_clang_demo
 )
 
 if (UNIX AND NOT APPLE)
-    target_link_libraries(conan_clang_demo PRIVATE dl)
+    target_link_libraries(gtoolapp PRIVATE dl)
 endif()
 
-set_target_properties(conan_clang_demo PROPERTIES
+set_target_properties(gtoolapp PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
@@ -45,26 +45,26 @@ if (WIN32)
     foreach(_dir IN LISTS _bin_dirs)
         file(GLOB _dlls "${_dir}/*.dll")
         foreach(_dll IN LISTS _dlls)
-            add_custom_command(TARGET conan_clang_demo POST_BUILD
+            add_custom_command(TARGET gtoolapp POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     "${_dll}"
-                    "$<TARGET_FILE_DIR:conan_clang_demo>"
+                    "$<TARGET_FILE_DIR:gtoolapp>"
             )
         endforeach()
     endforeach()
 endif()
 
 if (MSVC)
-    target_compile_options(conan_clang_demo PRIVATE
+    target_compile_options(gtoolapp PRIVATE
         /W4
         /permissive-
     )
 
-    set_property(TARGET conan_clang_demo PROPERTY
+    set_property(TARGET gtoolapp PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
     )
 else()
-    target_compile_options(conan_clang_demo PRIVATE
+    target_compile_options(gtoolapp PRIVATE
         -Wall
         -Wextra
         -Wpedantic

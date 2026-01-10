@@ -8,7 +8,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -48,29 +48,29 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $exe = Get-ChildItem -Path build -Recurse -Filter conan_clang_demo.exe | Select-Object -First 1
-          if (-not $exe) { throw "conan_clang_demo.exe not found under build" }
+          $exe = Get-ChildItem -Path build -Recurse -Filter gtoolapp.exe | Select-Object -First 1
+          if (-not $exe) { throw "gtoolapp.exe not found under build" }
           Copy-Item -Force $exe.FullName dist\\
           $pluginDir = Join-Path $exe.DirectoryName "plugins"
           if (Test-Path $pluginDir) {
             Copy-Item -Recurse -Force $pluginDir dist\\plugins
           }
           Get-ChildItem -Path $exe.DirectoryName -Filter *.dll | Copy-Item -Force -Destination dist\\
-          Compress-Archive -Path dist\\* -DestinationPath conan_clang_demo-windows.zip
+          Compress-Archive -Path dist\\* -DestinationPath gtoolapp-windows.zip
 
       - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
           mkdir -p dist
-          cp build/linux-release/build/Release/conan_clang_demo dist/
+          cp build/linux-release/build/Release/gtoolapp dist/
           cp -r build/linux-release/build/Release/plugins dist/
           cp -f build/linux-release/build/Release/*.so dist/ || true
-          tar -czf conan_clang_demo-linux.tar.gz -C dist .
+          tar -czf gtoolapp-linux.tar.gz -C dist .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: conan-clang-demo-${{ matrix.os }}
           path: |
-            conan_clang_demo-windows.zip
-            conan_clang_demo-linux.tar.gz
+            gtoolapp-windows.zip
+            gtoolapp-linux.tar.gz
