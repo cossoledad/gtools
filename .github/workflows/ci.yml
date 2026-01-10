@@ -81,7 +81,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: conan-clang-demo-${{ matrix.os }}
+          name: gtools-${{ matrix.os }}
           path: |
             gtoolapp-windows.zip
             gtoolapp-linux.tar.gz

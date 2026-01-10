@@ -17,7 +17,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "ImGui + Conan Demo", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "gtools", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return 1;
@@ -47,13 +47,14 @@ int main() {
             }
         }
     }
-    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL2_Init();
 
     PluginLoadResult plugin_result = LoadPlugins(GetDefaultPluginDir());
-    ImVec4 clear_color = ImVec4(0.1f, 0.1f, 0.12f, 1.0f);
+    ImVec4 clear_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -76,7 +77,7 @@ int main() {
                 ImGui::TextWrapped("%s", err.c_str());
             }
         }
-        ImGui::ColorEdit3("Clear color", reinterpret_cast<float*>(&clear_color));
+        // ImGui::ColorEdit3("Clear color", reinterpret_cast<float*>(&clear_color));
         if (ImGui::Button("Quit")) {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
