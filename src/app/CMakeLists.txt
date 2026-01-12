@@ -1,9 +1,18 @@
-add_executable(gtoolapp
-    main.cpp
-    ${PROJECT_SOURCE_DIR}/src/imgui/imgui_impl_glfw.cpp
-    ${PROJECT_SOURCE_DIR}/src/imgui/imgui_impl_opengl2.cpp
-    ${PROJECT_SOURCE_DIR}/src/core/plugin_loader.cpp
-)
+if (WIN32)
+    add_executable(gtoolapp WIN32
+        main.cpp
+        ${PROJECT_SOURCE_DIR}/src/imgui/imgui_impl_glfw.cpp
+        ${PROJECT_SOURCE_DIR}/src/imgui/imgui_impl_opengl2.cpp
+        ${PROJECT_SOURCE_DIR}/src/core/plugin_loader.cpp
+    )
+else()
+    add_executable(gtoolapp
+        main.cpp
+        ${PROJECT_SOURCE_DIR}/src/imgui/imgui_impl_glfw.cpp
+        ${PROJECT_SOURCE_DIR}/src/imgui/imgui_impl_opengl2.cpp
+        ${PROJECT_SOURCE_DIR}/src/core/plugin_loader.cpp
+    )
+endif()
 
 target_include_directories(gtoolapp
     PRIVATE

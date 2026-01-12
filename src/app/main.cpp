@@ -8,8 +8,54 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
+#include <vector>
+#include <cstdlib>
 
 #include "plugin_loader.h"
+
+namespace {
+
+void SetWindowIcon(GLFWwindow* window) {
+    const int width = 32;
+    const int height = 32;
+    std::vector<unsigned char> pixels(static_cast<size_t>(width * height * 4), 0);
+
+    const float cx = (width - 1) * 0.5f;
+    const float cy = (height - 1) * 0.5f;
+    const float outer_radius = 14.0f;
+    const float inner_radius = 9.0f;
+    const float outer_r2 = outer_radius * outer_radius;
+    const float inner_r2 = inner_radius * inner_radius;
+
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            const float dx = x - cx;
+            const float dy = y - cy;
+            const float dist2 = dx * dx + dy * dy;
+            if (dist2 <= outer_r2) {
+                const size_t idx = static_cast<size_t>((y * width + x) * 4);
+                if (dist2 <= inner_r2) {
+                    pixels[idx + 0] = 40;
+                    pixels[idx + 1] = 120;
+                    pixels[idx + 2] = 200;
+                } else {
+                    pixels[idx + 0] = 20;
+                    pixels[idx + 1] = 80;
+                    pixels[idx + 2] = 150;
+                }
+                pixels[idx + 3] = 255;
+            }
+        }
+    }
+
+    GLFWimage image;
+    image.width = width;
+    image.height = height;
+    image.pixels = pixels.data();
+    glfwSetWindowIcon(window, 1, &image);
+}
+
+} // namespace
 
 int main() {
     if (!glfwInit()) {
@@ -24,6 +70,8 @@ int main() {
         glfwTerminate();
         return 1;
     }
+
+    SetWindowIcon(window);
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -59,7 +107,7 @@ int main() {
     std::vector<char> plugin_visible(plugin_result.plugins.size(), 1);
     bool single_mode = true;
     int single_index = plugin_result.plugins.empty() ? -1 : 0;
-    int target_fps = 10;
+    int target_fps = 33;
     float font_scale = 1.0f;
     if (single_index >= 0) {
         std::fill(plugin_visible.begin(), plugin_visible.end(), 0);
@@ -189,3 +237,11 @@ int main() {
     glfwTerminate();
     return 0;
 }
+
+#if defined(_WIN32)
+#include <windows.h>
+
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+    return main();
+}
+#endif
