@@ -6,6 +6,8 @@
 
 #include <filesystem>
 #include <cstdio>
+#include <chrono>
+#include <thread>
 
 #include "plugin_loader.h"
 
@@ -17,7 +19,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "gtools", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(960, 590, "gtools", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return 1;
@@ -55,9 +57,18 @@ int main() {
 
     PluginLoadResult plugin_result = LoadPlugins(GetDefaultPluginDir());
     std::vector<char> plugin_visible(plugin_result.plugins.size(), 1);
+    bool single_mode = true;
+    int single_index = plugin_result.plugins.empty() ? -1 : 0;
+    int target_fps = 10;
+    float font_scale = 1.0f;
+    if (single_index >= 0) {
+        std::fill(plugin_visible.begin(), plugin_visible.end(), 0);
+        plugin_visible[static_cast<size_t>(single_index)] = 1;
+    }
     ImVec4 clear_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
     while (!glfwWindowShouldClose(window)) {
+        auto frame_start = std::chrono::steady_clock::now();
         glfwPollEvents();
 
         ImGui_ImplOpenGL2_NewFrame();
@@ -70,17 +81,51 @@ int main() {
         ImGuiWindowFlags host_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
         ImGui::Begin("Host", nullptr, host_flags);
         ImGui::Text("Loaded plugins: %d", static_cast<int>(plugin_result.plugins.size()));
+        ImGui::SliderInt("Target FPS", &target_fps, 1, 60);
+        if (ImGui::SliderFloat("Font scale", &font_scale, 0.5f, 2.0f)) {
+            io.FontGlobalScale = font_scale;
+        }
+        if (ImGui::Checkbox("Single app mode", &single_mode)) {
+            if (single_mode) {
+                int fallback = single_index;
+                if (fallback < 0) {
+                    for (size_t i = 0; i < plugin_visible.size(); ++i) {
+                        if (plugin_visible[i] != 0) {
+                            fallback = static_cast<int>(i);
+                            break;
+                        }
+                    }
+                }
+                if (fallback < 0 && !plugin_result.plugins.empty()) {
+                    fallback = 0;
+                }
+                single_index = fallback;
+                std::fill(plugin_visible.begin(), plugin_visible.end(), 0);
+                if (single_index >= 0) {
+                    plugin_visible[static_cast<size_t>(single_index)] = 1;
+                }
+            }
+        }
         ImGui::SeparatorText("Plugins");
         for (size_t i = 0; i < plugin_result.plugins.size(); ++i) {
             const auto& plugin = plugin_result.plugins[i];
             const char* name = plugin.info && plugin.info->name ? plugin.info->name : plugin.path.c_str();
             ImGui::PushID(static_cast<int>(i));
-            bool visible = plugin_visible[i] != 0;
-            if (ImGui::Checkbox("##plugin_visible", &visible)) {
-                plugin_visible[i] = visible ? 1 : 0;
+            if (single_mode) {
+                bool selected = single_index == static_cast<int>(i);
+                if (ImGui::Selectable(name, selected)) {
+                    single_index = static_cast<int>(i);
+                    std::fill(plugin_visible.begin(), plugin_visible.end(), 0);
+                    plugin_visible[i] = 1;
+                }
+            } else {
+                bool visible = plugin_visible[i] != 0;
+                if (ImGui::Checkbox("##plugin_visible", &visible)) {
+                    plugin_visible[i] = visible ? 1 : 0;
+                }
+                ImGui::SameLine();
+                ImGui::TextUnformatted(name);
             }
-            ImGui::SameLine();
-            ImGui::TextUnformatted(name);
             ImGui::PopID();
         }
         if (!plugin_result.errors.empty()) {
@@ -99,6 +144,15 @@ int main() {
         for (size_t i = 0; i < plugin_result.plugins.size(); ++i) {
             const auto& plugin = plugin_result.plugins[i];
             if (plugin_visible[i] != 0 && plugin.info && plugin.info->on_frame) {
+                if (single_mode) {
+                    ImVec2 content_pos(sidebar_width, 0.0f);
+                    ImVec2 content_size(io.DisplaySize.x - sidebar_width, io.DisplaySize.y);
+                    if (content_size.x < 0.0f) {
+                        content_size.x = 0.0f;
+                    }
+                    ImGui::SetNextWindowPos(content_pos, ImGuiCond_Always);
+                    ImGui::SetNextWindowSize(content_size, ImGuiCond_Always);
+                }
                 plugin.info->on_frame();
             }
         }
@@ -112,6 +166,17 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
+
+        if (target_fps > 0) {
+            const double target_frame_time = 1.0 / static_cast<double>(target_fps);
+            auto frame_end = std::chrono::steady_clock::now();
+            std::chrono::duration<double> elapsed = frame_end - frame_start;
+            if (elapsed.count() < target_frame_time) {
+                std::chrono::duration<double> sleep_time(target_frame_time - elapsed.count());
+                std::this_thread::sleep_for(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time));
+            }
+        }
     }
 
     ImGui_ImplOpenGL2_Shutdown();
